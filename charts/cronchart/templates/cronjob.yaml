@@ -1,0 +1,35 @@
+---
+apiVersion: batch/v2alpha1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  schedule: "0 14 * * 1-5"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          name: {{ .Release.Name }}
+          labels:
+            app: {{ .Release.Name }}
+          annotations:
+            pod.alpha.kubernetes.io/initialized: "true"
+            kube2iam.beta.domain.net/role: "arn:aws:iam::12345678901:role/testns/k8s/platform"
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: orch
+              image: "12345678901.dkr.ecr.us-west-2.amazonaws.com/dag-orchestrator:latest"
+              imagePullPolicy: Always
+              command: [/bin/bash]
+              args:
+              - setup.sh
+              - "{{ .Values.CLUSTER }}"
+              - "{{ .Values.DATA }}"
+              - "{{ .Values.MODE }}"
+              - "{{ .Values.EXECUTE }}"
+              - "{{ .Values.STACK }}"
